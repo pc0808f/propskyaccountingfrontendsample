@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>後端待辦事項儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .tab-active {
+            border-color: #3b82f6; /* blue-500 */
+            color: #3b82f6;
+            background-color: #eff6ff; /* blue-50 */
+        }
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .has-tooltip:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+
+
+    <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
+        <header class="bg-slate-800 p-6">
+            <h1 class="text-2xl font-bold text-white">後端數據指標總覽</h1>
+            <p class="text-slate-300 mt-1">此頁面為 `Backend_Todo.md` 內容的視覺化呈現。</p>
+        </header>
+
+
+        <div class="p-6">
+            <!-- Tab Navigation -->
+            <div class="border-b border-slate-200 mb-6">
+                <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                    <button id="tab-jjbb" class="tab-btn tab-active whitespace-nowrap py-3 px-1 border-b-2 font-semibold text-sm">
+                        JJBB 刷卡資料
+                    </button>
+                    <button id="tab-happycard" class="tab-btn text-slate-500 hover:text-slate-700 whitespace-nowrap py-3 px-1 border-b-2 border-transparent font-semibold text-sm">
+                        開心小卡營業資料
+                    </button>
+                    <button id="tab-cht" class="tab-btn text-slate-500 hover:text-slate-700 whitespace-nowrap py-3 px-1 border-b-2 border-transparent font-semibold text-sm">
+                        中華電信資料
+                    </button>
+                </nav>
+            </div>
+
+
+            <!-- Tab Content -->
+            <main>
+                <!-- JJBB 刷卡資料 -->
+                <div id="content-jjbb" class="tab-content">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">JJBB 刷卡資料儀表板</h2>
+                            <p class="text-slate-500 text-sm mt-1">API 端點建議: <code>/api/jjbb/daily-summary</code></p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <select id="jjbb-site-filter" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                                <option value="all_individual">所有場個別 (列表)</option>
+                                <option value="all_aggregated">所有場加總 (總計)</option>
+                                <option value="信義A8館">信義A8館</option>
+                                <option value="南西誠品">南西誠品</option>
+                                <option value="板橋大遠百">板橋大遠百</option>
+                                <option value="台中新光">台中新光</option>
+                                <option value="高雄夢時代">高雄夢時代</option>
+                            </select>
+                            <input type="date" id="jjbb-start-date" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                            <span class="text-slate-500">至</span>
+                            <input type="date" id="jjbb-end-date" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                            <button id="jjbb-search-btn" class="bg-white text-slate-700 font-semibold py-2 px-4 rounded-md border border-slate-300 hover:bg-slate-50 transition text-sm">搜尋</button>
+                            <button class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 transition text-sm flex items-center gap-2">
+                               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                匯出報表
+                            </button>
+                        </div>
+                    </div>
+
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-500">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">結算日期</th>
+                                    <th scope="col" class="px-6 py-3">場地名稱</th>
+                                    <th scope="col" class="px-6 py-3">機台 ID</th>
+                                    <th scope="col" class="px-6 py-3 text-right">營收總額</th>
+                                    <th scope="col" class="px-6 py-3 text-right">金流手續費</th>
+                                    <th scope="col" class="px-6 py-3 text-right">日租費</th>
+                                    <th scope="col" class="px-6 py-3 text-right">實際入帳總額</th>
+                                    <th scope="col" class="px-6 py-3 text-center">交易次數</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jjbb-table-body">
+                                <!-- 數據將由 JavaScript 動態生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <!-- 開心小卡營業資料 -->
+                <div id="content-happycard" class="tab-content hidden">
+                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800">開心小卡營業資料</h2>
+                            <p class="text-slate-500 text-sm mt-1">API 端點建議: <code>/api/happycard/daily-stats</code></p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                             <select id="happycard-site-filter" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                                <option value="all_individual">所有場個別 (列表)</option>
+                                <option value="all_aggregated">所有場加總 (總計)</option>
+                                <option value="西門萬年">西門萬年</option>
+                                <option value="士林夜市">士林夜市</option>
+                                <option value="逢甲商圈">逢甲商圈</option>
+                            </select>
+                            <input type="date" id="happycard-start-date" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                            <span class="text-slate-500">至</span>
+                            <input type="date" id="happycard-end-date" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                            <button id="happycard-search-btn" class="bg-white text-slate-700 font-semibold py-2 px-4 rounded-md border border-slate-300 hover:bg-slate-50 transition text-sm">搜尋</button>
+                            <button class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 transition text-sm flex items-center gap-2">
+                               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                匯出 EXCEL
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-500">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">結算日期</th>
+                                    <th scope="col" class="px-6 py-3">場地名稱</th>
+                                    <th scope="col" class="px-6 py-3">機台 ID</th>
+                                    <th scope="col" class="px-6 py-3 text-center">幣量</th>
+                                    <th scope="col" class="px-6 py-3 text-center">出獎次數</th>
+                                    <th scope="col" class="px-6 py-3 text-center">電子支付次數</th>
+                                    <th scope="col" class="px-6 py-3 text-center">贈獎局次數</th>
+                                    <th scope="col" class="px-6 py-3 text-center">免費局次數</th>
+                                </tr>
+                            </thead>
+                            <tbody id="happycard-table-body">
+                                <!-- 數據將由 JavaScript 動態生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <!-- 中華電信資料 -->
+                <div id="content-cht" class="tab-content hidden">
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        <h3 class="mt-2 text-lg font-medium text-slate-900">待補</h3>
+                        <p class="mt-1 text-sm text-slate-500">此區塊的需求尚未提供，待規格確認後進行開發。</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Tab切換邏輯 ---
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('tab-active'));
+                tab.classList.add('tab-active');
+                contents.forEach(content => content.classList.add('hidden'));
+                const contentId = `content-${tab.id.split('-')[1]}`;
+                document.getElementById(contentId).classList.remove('hidden');
+            });
+        });
+
+
+        // --- 模擬數據與頁面更新邏輯 ---
+        function formatCurrency(value) {
+            return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+
+        function formatNumber(value) {
+            return value.toLocaleString('en-US');
+        }
+
+
+        // --- JJBB 資料邏輯 ---
+        function generateJjbbTableData(rowCount = 25) {
+            const data = [];
+            const sites = ['信義A8館', '南西誠品', '板橋大遠百', '台中新光', '高雄夢時代'];
+            const today = new Date();
+            for (let i = 0; i < rowCount; i++) {
+                const grossRevenue = Math.random() * 5000 + (Math.random() > 0.8 ? 15 : 100);
+                const gatewayFee = grossRevenue > 20 ? grossRevenue * 0.02 : 0;
+                const dailyRent = grossRevenue <= 20 ? Math.max(grossRevenue, 0) : 20;
+                const netSettlement = grossRevenue - gatewayFee - dailyRent;
+                data.push({
+                    settlement_date: today.toISOString().split('T')[0],
+                    site_name: sites[Math.floor(Math.random() * sites.length)],
+                    machine_id: `JJBB-TPE-${Math.floor(Math.random() * 900) + 100}`,
+                    gross_revenue: grossRevenue,
+                    gateway_fee: gatewayFee,
+                    daily_rent: dailyRent,
+                    net_settlement: netSettlement,
+                    txn_count: Math.floor(Math.random() * 200) + 1,
+                });
+            }
+            return data;
+        }
+
+
+        function renderJjbbTable(data) {
+            const tableBody = document.getElementById('jjbb-table-body');
+            tableBody.innerHTML = '';
+            if (data.length === 0) {
+                 tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-500">沒有符合條件的資料</td></tr>`;
+                 return;
+            }
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = row.is_summary ? 'bg-slate-100 border-b font-bold text-slate-800' : 'bg-white border-b hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="px-6 py-4">${row.settlement_date}</td>
+                    <th scope="row" class="px-6 py-4 font-medium whitespace-nowrap">${row.site_name}</th>
+                    <td class="px-6 py-4">${row.machine_id || 'N/A'}</td>
+                    <td class="px-6 py-4 text-right">${formatCurrency(row.gross_revenue)}</td>
+                    <td class="px-6 py-4 text-right text-red-600">(${formatCurrency(row.gateway_fee)})</td>
+                    <td class="px-6 py-4 text-right text-red-600">(${formatCurrency(row.daily_rent)})</td>
+                    <td class="px-6 py-4 text-right font-semibold text-blue-600">${formatCurrency(row.net_settlement)}</td>
+                    <td class="px-6 py-4 text-center">${formatNumber(row.txn_count)}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+
+        // --- 開心小卡 資料邏輯 ---
+        function generateHappyCardTableData(rowCount = 30) {
+            const data = [];
+            const sites = ['西門萬年', '士林夜市', '逢甲商圈'];
+            const today = new Date();
+            for (let i = 0; i < rowCount; i++) {
+                data.push({
+                    settlement_date: today.toISOString().split('T')[0],
+                    site_name: sites[Math.floor(Math.random() * sites.length)],
+                    machine_id: `HC-${Math.floor(Math.random() * 9000) + 1000}`,
+                    coin_count: Math.floor(Math.random() * 10000) + 2000,
+                    payout_count: Math.floor(Math.random() * 100) + 10,
+                    epay_count: Math.floor(Math.random() * 300) + 50,
+                    gift_rounds: Math.floor(Math.random() * 50) + 5,
+                    free_rounds: Math.floor(Math.random() * 20) + 2,
+                });
+            }
+            return data;
+        }
+
+
+        function renderHappyCardTable(data) {
+            const tableBody = document.getElementById('happycard-table-body');
+            tableBody.innerHTML = '';
+            if (data.length === 0) {
+                 tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-500">沒有符合條件的資料</td></tr>`;
+                 return;
+            }
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = row.is_summary ? 'bg-slate-100 border-b font-bold text-slate-800' : 'bg-white border-b hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="px-6 py-4">${row.settlement_date}</td>
+                    <th scope="row" class="px-6 py-4 font-medium whitespace-nowrap">${row.site_name}</th>
+                    <td class="px-6 py-4">${row.machine_id || 'N/A'}</td>
+                    <td class="px-6 py-4 text-center">${formatNumber(row.coin_count)}</td>
+                    <td class="px-6 py-4 text-center">${formatNumber(row.payout_count)}</td>
+                    <td class="px-6 py-4 text-center">${formatNumber(row.epay_count)}</td>
+                    <td class="px-6 py-4 text-center">${formatNumber(row.gift_rounds)}</td>
+                    <td class="px-6 py-4 text-center">${formatNumber(row.free_rounds)}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+
+        // --- 主更新函數 ---
+        function updatePageData() {
+            // JJBB 更新邏輯
+            const jjbbSiteFilterValue = document.getElementById('jjbb-site-filter').value;
+            const jjbbFullData = generateJjbbTableData();
+            let jjbbDataToRender;
+
+
+            if (jjbbSiteFilterValue === 'all_aggregated') {
+                jjbbDataToRender = [jjbbFullData.reduce((summary, row) => {
+                    summary.gross_revenue += row.gross_revenue;
+                    summary.gateway_fee += row.gateway_fee;
+                    summary.daily_rent += row.daily_rent;
+                    summary.net_settlement += row.net_settlement;
+                    summary.txn_count += row.txn_count;
+                    return summary;
+                }, { settlement_date: new Date().toISOString().split('T')[0], site_name: '所有場地總計', machine_id: '---', gross_revenue: 0, gateway_fee: 0, daily_rent: 0, net_settlement: 0, txn_count: 0, is_summary: true })];
+            } else if (jjbbSiteFilterValue === 'all_individual') {
+                jjbbDataToRender = jjbbFullData;
+            } else {
+                jjbbDataToRender = jjbbFullData.filter(row => row.site_name === jjbbSiteFilterValue);
+            }
+            renderJjbbTable(jjbbDataToRender);
+
+
+            // 開心小卡 更新邏輯
+            const happyCardSiteFilterValue = document.getElementById('happycard-site-filter').value;
+            const happyCardFullData = generateHappyCardTableData();
+            let happyCardDataToRender;
+
+
+            if (happyCardSiteFilterValue === 'all_aggregated') {
+                happyCardDataToRender = [happyCardFullData.reduce((summary, row) => {
+                    summary.coin_count += row.coin_count;
+                    summary.payout_count += row.payout_count;
+                    summary.epay_count += row.epay_count;
+                    summary.gift_rounds += row.gift_rounds;
+                    summary.free_rounds += row.free_rounds;
+                    return summary;
+                }, { settlement_date: new Date().toISOString().split('T')[0], site_name: '所有場地總計', machine_id: '---', coin_count: 0, payout_count: 0, epay_count: 0, gift_rounds: 0, free_rounds: 0, is_summary: true })];
+            } else if (happyCardSiteFilterValue === 'all_individual') {
+                happyCardDataToRender = happyCardFullData;
+            } else {
+                happyCardDataToRender = happyCardFullData.filter(row => row.site_name === happyCardSiteFilterValue);
+            }
+            renderHappyCardTable(happyCardDataToRender);
+        }
+
+
+        // 初始化頁面與事件監聽
+        document.addEventListener('DOMContentLoaded', () => {
+            const todayStr = new Date().toISOString().split('T')[0];
+            // JJBB listeners
+            document.getElementById('jjbb-start-date').value = todayStr;
+            document.getElementById('jjbb-end-date').value = todayStr;
+            document.getElementById('jjbb-search-btn').addEventListener('click', updatePageData);
+            document.getElementById('jjbb-site-filter').addEventListener('change', updatePageData);
+
+
+            // HappyCard listeners
+            document.getElementById('happycard-start-date').value = todayStr;
+            document.getElementById('happycard-end-date').value = todayStr;
+            document.getElementById('happycard-search-btn').addEventListener('click', updatePageData);
+            document.getElementById('happycard-site-filter').addEventListener('change', updatePageData);
+
+
+            updatePageData(); // 初始載入
+            setInterval(updatePageData, 10000); // 每10秒模擬一次數據自動更新
+        });
+
+
+    </script>
+</body>
+</html>
+
