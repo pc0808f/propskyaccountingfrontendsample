@@ -92,18 +92,151 @@ python -m http.server 8000
 - 實作適當的輸入驗證和 XSS 防護
 - 使用 HTTPS 和適當的 CSP 標頭
 
-## 📊 建議的 API 端點
+## 📊 實際 API 整合指引
 
+### 🔗 API 基礎資訊
+- **API 文檔**: https://smartpay.propskynet.com/docs
+- **基礎 URL**: `https://smartpay.propskynet.com`
+- **認證方式**: OAuth2 Bearer Token
+
+### 🏪 與目前頁面對應的 API 端點
+
+#### 1. JJBB 刷卡資料 → 卡機管理 API
 ```javascript
-// JJBB 刷卡資料
-GET /api/jjbb/daily-summary?site={site}&start_date={date}&end_date={date}
+// 取得卡機列表 (對應 JJBB 機台資料)
+GET /api/cardmachines
+Query Parameters:
+- page: 頁數
+- per_page: 每頁筆數
+- store_id: 店家 ID (對應場地篩選)
+- start_date: 開始日期
+- end_date: 結束日期
 
-// 開心小卡營業資料  
-GET /api/happycard/daily-stats?site={site}&start_date={date}&end_date={date}
-
-// 中華電信資料 (待定義)
-GET /api/cht/data?site={site}&start_date={date}&end_date={date}
+// 回應資料結構對應前端欄位:
+{
+  "data": [
+    {
+      "id": "machine_id",           // → 機台 ID
+      "store_name": "site_name",    // → 場地名稱  
+      "daily_revenue": "gross_revenue",     // → 營收總額
+      "transaction_fee": "gateway_fee",     // → 金流手續費
+      "daily_rent": "daily_rent",           // → 日租費
+      "net_amount": "net_settlement",       // → 實際入帳總額
+      "transaction_count": "txn_count",     // → 交易次數
+      "settlement_date": "settlement_date"  // → 結算日期
+    }
+  ]
+}
 ```
+
+#### 2. 開心小卡營業資料 → 娃娃機管理 API  
+```javascript
+// 取得娃娃機統計資料 (對應開心小卡資料)
+GET /api/claw-machines
+Query Parameters:
+- page: 頁數
+- per_page: 每頁筆數  
+- store_id: 店家 ID
+- start_date: 開始日期
+- end_date: 結束日期
+
+// 回應資料結構對應前端欄位:
+{
+  "data": [
+    {
+      "id": "machine_id",              // → 機台 ID
+      "store_name": "site_name",       // → 場地名稱
+      "coin_count": "coin_count",      // → 幣量
+      "payout_count": "payout_count",  // → 出獎次數
+      "epay_count": "epay_count",      // → 電子支付次數
+      "gift_rounds": "gift_rounds",    // → 贈獎局次數
+      "free_rounds": "free_rounds",    // → 免費局次數
+      "settlement_date": "settlement_date"
+    }
+  ]
+}
+```
+
+#### 3. 店家資料 → 場地篩選選項
+```javascript
+// 取得店家列表 (用於場地篩選下拉選單)
+GET /api/stores
+Response:
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "信義A8館",
+      "status": "active"
+    }
+  ]
+}
+```
+
+### 🔧 前端工程師實作建議
+
+#### API 整合步驟
+1. **認證處理**: 實作 OAuth2 token 管理
+2. **資料映射**: 將 API 回應映射到前端資料格式
+3. **錯誤處理**: 加入 API 失敗和網路錯誤處理
+4. **分頁處理**: 實作資料分頁載入
+5. **篩選邏輯**: 整合店家篩選和日期範圍查詢
+
+#### 範例實作 (JavaScript)
+```javascript
+// 範例: 取得 JJBB 資料的函數
+async function fetchJjbbData(filters = {}) {
+  const params = new URLSearchParams({
+    page: 1,
+    per_page: 25,
+    ...filters
+  });
+  
+  try {
+    const response = await fetch(`https://smartpay.propskynet.com/api/cardmachines?${params}`, {
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) throw new Error('API request failed');
+    
+    const data = await response.json();
+    return mapToFrontendFormat(data.data);
+  } catch (error) {
+    console.error('Failed to fetch JJBB data:', error);
+    return [];
+  }
+}
+
+// 資料映射函數
+function mapToFrontendFormat(apiData) {
+  return apiData.map(item => ({
+    settlement_date: item.settlement_date,
+    site_name: item.store_name,
+    machine_id: item.id,
+    gross_revenue: item.daily_revenue || 0,
+    gateway_fee: item.transaction_fee || 0,
+    daily_rent: item.daily_rent || 0,
+    net_settlement: item.net_amount || 0,
+    txn_count: item.transaction_count || 0
+  }));
+}
+```
+
+### ⚠️ API 整合注意事項
+1. **資料對應**: 目前頁面的模擬欄位已對應實際 API 結構
+2. **認證 Token**: 需要實作 OAuth2 認證流程
+3. **分頁處理**: API 支援分頁，需要處理大量資料載入
+4. **錯誤狀態**: 加入 loading、error 和 empty 狀態處理
+5. **資料快取**: 考慮實作適當的資料快取策略
+
+### 📈 額外可用的 API 功能
+- **Excel 匯出**: `/api/cardmachines/export` - 支援報表匯出功能
+- **批量操作**: 支援 Excel 批量上傳和更新
+- **即時狀態**: 娃娃機連線狀態即時更新
+- **財務統計**: `/api/accounting` - 詳細財務報表
 
 ## 📝 授權
 
