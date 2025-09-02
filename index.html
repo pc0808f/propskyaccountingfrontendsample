@@ -13,17 +13,20 @@
         }
         .tab-active {
             border-color: #3b82f6; /* blue-500 */
-            color: #3b82f6;
             background-color: #eff6ff; /* blue-50 */
         }
-        .tooltip {
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.3s;
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
         }
-        .has-tooltip:hover .tooltip {
-            visibility: visible;
-            opacity: 1;
+        .sort-indicator {
+            display: inline-block;
+            width: 1.2em;
+            text-align: center;
+            color: #94a3b8; /* slate-400 */
+        }
+        .sortable-header.sorted .sort-indicator {
+            color: #3b82f6; /* blue-500 */
         }
     </style>
 </head>
@@ -41,7 +44,7 @@
             <!-- Tab Navigation -->
             <div class="border-b border-slate-200 mb-6">
                 <nav class="-mb-px flex space-x-6" aria-label="Tabs">
-                    <button id="tab-jjbb" class="tab-btn tab-active whitespace-nowrap py-3 px-1 border-b-2 font-semibold text-sm">
+                    <button id="tab-jjbb" class="tab-btn tab-active text-blue-600 whitespace-nowrap py-3 px-1 border-b-2 font-semibold text-sm">
                         JJBB 刷卡資料
                     </button>
                     <button id="tab-happycard" class="tab-btn text-slate-500 hover:text-slate-700 whitespace-nowrap py-3 px-1 border-b-2 border-transparent font-semibold text-sm">
@@ -64,7 +67,7 @@
                             <p class="text-slate-500 text-sm mt-1">API 端點建議: <code>/api/jjbb/daily-summary</code></p>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
-                            <select id="jjbb-site-filter" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                            <select id="jjbb-site-filter" class="text-slate-900 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                                 <option value="all_individual">所有場個別 (列表)</option>
                                 <option value="all_aggregated">所有場加總 (總計)</option>
                                 <option value="信義A8館">信義A8館</option>
@@ -73,12 +76,12 @@
                                 <option value="台中新光">台中新光</option>
                                 <option value="高雄夢時代">高雄夢時代</option>
                             </select>
-                            <input type="date" id="jjbb-start-date" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                            <input type="date" id="jjbb-start-date" class="text-slate-900 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                             <span class="text-slate-500">至</span>
-                            <input type="date" id="jjbb-end-date" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                            <input type="date" id="jjbb-end-date" class="text-slate-900 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                             <button id="jjbb-search-btn" class="bg-white text-slate-700 font-semibold py-2 px-4 rounded-md border border-slate-300 hover:bg-slate-50 transition text-sm">搜尋</button>
                             <button class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 transition text-sm flex items-center gap-2">
-                               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                 匯出報表
                             </button>
                         </div>
@@ -89,14 +92,14 @@
                         <table class="w-full text-sm text-left text-slate-500">
                             <thead class="text-xs text-slate-700 uppercase bg-slate-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3">結算日期</th>
-                                    <th scope="col" class="px-6 py-3">場地名稱</th>
-                                    <th scope="col" class="px-6 py-3">機台 ID</th>
-                                    <th scope="col" class="px-6 py-3 text-right">營收總額</th>
-                                    <th scope="col" class="px-6 py-3 text-right">金流手續費</th>
-                                    <th scope="col" class="px-6 py-3 text-right">日租費</th>
-                                    <th scope="col" class="px-6 py-3 text-right">實際入帳總額</th>
-                                    <th scope="col" class="px-6 py-3 text-center">交易次數</th>
+                                    <th scope="col" class="px-6 py-3 sortable-header" data-sort-table="jjbb" data-sort-key="settlement_date">結算日期<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header" data-sort-table="jjbb" data-sort-key="site_name">場地名稱<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header" data-sort-table="jjbb" data-sort-key="machine_id">機台 ID<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header text-right" data-sort-table="jjbb" data-sort-key="gross_revenue">營收總額<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header text-right" data-sort-table="jjbb" data-sort-key="gateway_fee">金流手續費<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header text-right" data-sort-table="jjbb" data-sort-key="daily_rent">日租費<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header text-right" data-sort-table="jjbb" data-sort-key="net_settlement">實際入帳總額<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header text-center" data-sort-table="jjbb" data-sort-key="txn_count">交易次數<span class="sort-indicator"></span></th>
                                 </tr>
                             </thead>
                             <tbody id="jjbb-table-body">
@@ -112,22 +115,22 @@
                      <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                         <div>
                             <h2 class="text-xl font-bold text-slate-800">開心小卡營業資料</h2>
-                            <p class="text-slate-500 text-sm mt-1">API 端點建議: <code>/api/happycard/daily-stats</code></p>
+                            <p class="text-slate-500 text-sm mt-1">API 端點建議: code>/api/happycard/daily-stats</code></p>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
-                             <select id="happycard-site-filter" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                             <select id="happycard-site-filter" class="text-slate-900 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                                 <option value="all_individual">所有場個別 (列表)</option>
                                 <option value="all_aggregated">所有場加總 (總計)</option>
                                 <option value="西門萬年">西門萬年</option>
                                 <option value="士林夜市">士林夜市</option>
                                 <option value="逢甲商圈">逢甲商圈</option>
                             </select>
-                            <input type="date" id="happycard-start-date" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                            <input type="date" id="happycard-start-date" class="text-slate-900 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                             <span class="text-slate-500">至</span>
-                            <input type="date" id="happycard-end-date" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                            <input type="date" id="happycard-end-date" class="text-slate-900 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                             <button id="happycard-search-btn" class="bg-white text-slate-700 font-semibold py-2 px-4 rounded-md border border-slate-300 hover:bg-slate-50 transition text-sm">搜尋</button>
                             <button class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-600 transition text-sm flex items-center gap-2">
-                               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                 匯出 EXCEL
                             </button>
                         </div>
@@ -136,14 +139,14 @@
                         <table class="w-full text-sm text-left text-slate-500">
                             <thead class="text-xs text-slate-700 uppercase bg-slate-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3">結算日期</th>
-                                    <th scope="col" class="px-6 py-3">場地名稱</th>
-                                    <th scope="col" class="px-6 py-3">機台 ID</th>
-                                    <th scope="col" class="px-6 py-3 text-center">幣量</th>
-                                    <th scope="col" class="px-6 py-3 text-center">出獎次數</th>
-                                    <th scope="col" class="px-6 py-3 text-center">電子支付次數</th>
-                                    <th scope="col" class="px-6 py-3 text-center">贈獎局次數</th>
-                                    <th scope="col" class="px-6 py-3 text-center">免費局次數</th>
+                                    <th scope="col" class="px-6 py-3 sortable-header" data-sort-table="happycard" data-sort-key="settlement_date">結算日期<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header" data-sort-table="happycard" data-sort-key="site_name">場地名稱<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header" data-sort-table="happycard" data-sort-key="machine_id">機台 ID<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header text-center" data-sort-table="happycard" data-sort-key="coin_count">幣量<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header text-center" data-sort-table="happycard" data-sort-key="payout_count">出獎次數<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header text-center" data-sort-table="happycard" data-sort-key="epay_count">電子支付次數<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header text-center" data-sort-table="happycard" data-sort-key="gift_rounds">贈獎局次數<span class="sort-indicator"></span></th>
+                                    <th scope="col" class="px-6 py-3 sortable-header text-center" data-sort-table="happycard" data-sort-key="free_rounds">免費局次數<span class="sort-indicator"></span></th>
                                 </tr>
                             </thead>
                             <tbody id="happycard-table-body">
@@ -157,7 +160,7 @@
                 <!-- 中華電信資料 -->
                 <div id="content-cht" class="tab-content hidden">
                     <div class="text-center py-12">
-                        <svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        <svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                         <h3 class="mt-2 text-lg font-medium text-slate-900">待補</h3>
                         <p class="mt-1 text-sm text-slate-500">此區塊的需求尚未提供，待規格確認後進行開發。</p>
                     </div>
@@ -173,15 +176,25 @@
         const contents = document.querySelectorAll('.tab-content');
 
 
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('tab-active'));
-                tab.classList.add('tab-active');
+        tabs.forEach(clickedTab => {
+            clickedTab.addEventListener('click', () => {
+                tabs.forEach(tab => {
+                    tab.classList.remove('tab-active', 'text-blue-600');
+                    tab.classList.add('text-slate-500');
+                });
+                clickedTab.classList.add('tab-active', 'text-blue-600');
+                clickedTab.classList.remove('text-slate-500');
                 contents.forEach(content => content.classList.add('hidden'));
-                const contentId = `content-${tab.id.split('-')[1]}`;
+                const contentId = `content-${clickedTab.id.split('-')[1]}`;
                 document.getElementById(contentId).classList.remove('hidden');
             });
         });
+       
+        // --- 排序狀態管理 ---
+        let sortStates = {
+            jjbb: { key: 'settlement_date', direction: 'desc' },
+            happycard: { key: 'settlement_date', direction: 'desc' }
+        };
 
 
         // --- 模擬數據與頁面更新邏輯 ---
@@ -201,12 +214,15 @@
             const sites = ['信義A8館', '南西誠品', '板橋大遠百', '台中新光', '高雄夢時代'];
             const today = new Date();
             for (let i = 0; i < rowCount; i++) {
+                const dayOffset = Math.floor(Math.random() * 7);
+                const date = new Date(today);
+                date.setDate(today.getDate() - dayOffset);
                 const grossRevenue = Math.random() * 5000 + (Math.random() > 0.8 ? 15 : 100);
                 const gatewayFee = grossRevenue > 20 ? grossRevenue * 0.02 : 0;
                 const dailyRent = grossRevenue <= 20 ? Math.max(grossRevenue, 0) : 20;
                 const netSettlement = grossRevenue - gatewayFee - dailyRent;
                 data.push({
-                    settlement_date: today.toISOString().split('T')[0],
+                    settlement_date: date.toISOString().split('T')[0],
                     site_name: sites[Math.floor(Math.random() * sites.length)],
                     machine_id: `JJBB-TPE-${Math.floor(Math.random() * 900) + 100}`,
                     gross_revenue: grossRevenue,
@@ -251,8 +267,11 @@
             const sites = ['西門萬年', '士林夜市', '逢甲商圈'];
             const today = new Date();
             for (let i = 0; i < rowCount; i++) {
+                const dayOffset = Math.floor(Math.random() * 7);
+                const date = new Date(today);
+                date.setDate(today.getDate() - dayOffset);
                 data.push({
-                    settlement_date: today.toISOString().split('T')[0],
+                    settlement_date: date.toISOString().split('T')[0],
                     site_name: sites[Math.floor(Math.random() * sites.length)],
                     machine_id: `HC-${Math.floor(Math.random() * 9000) + 1000}`,
                     coin_count: Math.floor(Math.random() * 10000) + 2000,
@@ -289,80 +308,121 @@
                 tableBody.appendChild(tr);
             });
         }
+       
+        function updateSortIndicators(table) {
+            const sortState = sortStates[table];
+            document.querySelectorAll(`th[data-sort-table="${table}"]`).forEach(th => {
+                const indicator = th.querySelector('.sort-indicator');
+                if (th.dataset.sortKey === sortState.key) {
+                    th.classList.add('sorted', 'bg-slate-200');
+                    indicator.textContent = sortState.direction === 'asc' ? '▲' : '▼';
+                } else {
+                    th.classList.remove('sorted', 'bg-slate-200');
+                    indicator.textContent = '↕';
+                }
+            });
+        }
 
 
         // --- 主更新函數 ---
         function updatePageData() {
-            // JJBB 更新邏輯
-            const jjbbSiteFilterValue = document.getElementById('jjbb-site-filter').value;
+            // -- JJBB --
+            const jjbbSiteFilter = document.getElementById('jjbb-site-filter').value;
             const jjbbFullData = generateJjbbTableData();
             let jjbbDataToRender;
 
 
-            if (jjbbSiteFilterValue === 'all_aggregated') {
-                jjbbDataToRender = [jjbbFullData.reduce((summary, row) => {
-                    summary.gross_revenue += row.gross_revenue;
-                    summary.gateway_fee += row.gateway_fee;
-                    summary.daily_rent += row.daily_rent;
-                    summary.net_settlement += row.net_settlement;
-                    summary.txn_count += row.txn_count;
-                    return summary;
-                }, { settlement_date: new Date().toISOString().split('T')[0], site_name: '所有場地總計', machine_id: '---', gross_revenue: 0, gateway_fee: 0, daily_rent: 0, net_settlement: 0, txn_count: 0, is_summary: true })];
-            } else if (jjbbSiteFilterValue === 'all_individual') {
-                jjbbDataToRender = jjbbFullData;
+            if (jjbbSiteFilter === 'all_aggregated') {
+                jjbbDataToRender = [jjbbFullData.reduce((sum, row) => ({...sum, gross_revenue: sum.gross_revenue + row.gross_revenue, gateway_fee: sum.gateway_fee + row.gateway_fee, daily_rent: sum.daily_rent + row.daily_rent, net_settlement: sum.net_settlement + row.net_settlement, txn_count: sum.txn_count + row.txn_count }), { settlement_date: new Date().toISOString().split('T')[0], site_name: '所有場地總計', machine_id: '---', gross_revenue: 0, gateway_fee: 0, daily_rent: 0, net_settlement: 0, txn_count: 0, is_summary: true })];
             } else {
-                jjbbDataToRender = jjbbFullData.filter(row => row.site_name === jjbbSiteFilterValue);
+                jjbbDataToRender = (jjbbSiteFilter === 'all_individual') ? jjbbFullData : jjbbFullData.filter(row => row.site_name === jjbbSiteFilter);
+                // 排序
+                const { key, direction } = sortStates.jjbb;
+                jjbbDataToRender.sort((a, b) => {
+                    const valA = a[key];
+                    const valB = b[key];
+                    const order = direction === 'asc' ? 1 : -1;
+                    if (valA < valB) return -1 * order;
+                    if (valA > valB) return 1 * order;
+                    return 0;
+                });
             }
             renderJjbbTable(jjbbDataToRender);
+            updateSortIndicators('jjbb');
 
 
-            // 開心小卡 更新邏輯
-            const happyCardSiteFilterValue = document.getElementById('happycard-site-filter').value;
+            // -- HappyCard --
+            const happyCardSiteFilter = document.getElementById('happycard-site-filter').value;
             const happyCardFullData = generateHappyCardTableData();
             let happyCardDataToRender;
 
 
-            if (happyCardSiteFilterValue === 'all_aggregated') {
-                happyCardDataToRender = [happyCardFullData.reduce((summary, row) => {
-                    summary.coin_count += row.coin_count;
-                    summary.payout_count += row.payout_count;
-                    summary.epay_count += row.epay_count;
-                    summary.gift_rounds += row.gift_rounds;
-                    summary.free_rounds += row.free_rounds;
-                    return summary;
-                }, { settlement_date: new Date().toISOString().split('T')[0], site_name: '所有場地總計', machine_id: '---', coin_count: 0, payout_count: 0, epay_count: 0, gift_rounds: 0, free_rounds: 0, is_summary: true })];
-            } else if (happyCardSiteFilterValue === 'all_individual') {
-                happyCardDataToRender = happyCardFullData;
+            if (happyCardSiteFilter === 'all_aggregated') {
+                happyCardDataToRender = [happyCardFullData.reduce((sum, row) => ({...sum, coin_count: sum.coin_count + row.coin_count, payout_count: sum.payout_count + row.payout_count, epay_count: sum.epay_count + row.epay_count, gift_rounds: sum.gift_rounds + row.gift_rounds, free_rounds: sum.free_rounds + row.free_rounds }), { settlement_date: new Date().toISOString().split('T')[0], site_name: '所有場地總計', machine_id: '---', coin_count: 0, payout_count: 0, epay_count: 0, gift_rounds: 0, free_rounds: 0, is_summary: true })];
             } else {
-                happyCardDataToRender = happyCardFullData.filter(row => row.site_name === happyCardSiteFilterValue);
+                 happyCardDataToRender = (happyCardSiteFilter === 'all_individual') ? happyCardFullData : happyCardFullData.filter(row => row.site_name === happyCardSiteFilter);
+                 // 排序
+                 const { key, direction } = sortStates.happycard;
+                 happyCardDataToRender.sort((a, b) => {
+                    const valA = a[key];
+                    const valB = b[key];
+                    const order = direction === 'asc' ? 1 : -1;
+                    if (valA < valB) return -1 * order;
+                    if (valA > valB) return 1 * order;
+                    return 0;
+                });
             }
             renderHappyCardTable(happyCardDataToRender);
+            updateSortIndicators('happycard');
         }
 
 
         // 初始化頁面與事件監聽
         document.addEventListener('DOMContentLoaded', () => {
             const todayStr = new Date().toISOString().split('T')[0];
-            // JJBB listeners
-            document.getElementById('jjbb-start-date').value = todayStr;
-            document.getElementById('jjbb-end-date').value = todayStr;
-            document.getElementById('jjbb-search-btn').addEventListener('click', updatePageData);
-            document.getElementById('jjbb-site-filter').addEventListener('change', updatePageData);
+           
+            // 日期設定
+            ['jjbb-start-date', 'jjbb-end-date', 'happycard-start-date', 'happycard-end-date'].forEach(id => {
+                document.getElementById(id).value = todayStr;
+            });
+           
+            // 搜尋與篩選監聽
+            ['jjbb-search-btn', 'jjbb-site-filter', 'happycard-search-btn', 'happycard-site-filter'].forEach(id => {
+                 document.getElementById(id).addEventListener('change', updatePageData);
+                 if (id.includes('btn')) {
+                    document.getElementById(id).addEventListener('click', updatePageData);
+                 }
+            });
 
 
-            // HappyCard listeners
-            document.getElementById('happycard-start-date').value = todayStr;
-            document.getElementById('happycard-end-date').value = todayStr;
-            document.getElementById('happycard-search-btn').addEventListener('click', updatePageData);
-            document.getElementById('happycard-site-filter').addEventListener('change', updatePageData);
+            // 排序監聽
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const table = header.dataset.sortTable;
+                    const key = header.dataset.sortKey;
+                    const currentSortState = sortStates[table];
+
+
+                    if (currentSortState.key === key) {
+                        currentSortState.direction = currentSortState.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSortState.key = key;
+                        currentSortState.direction = 'asc';
+                    }
+                    updatePageData();
+                });
+            });
 
 
             updatePageData(); // 初始載入
-            setInterval(updatePageData, 10000); // 每10秒模擬一次數據自動更新
         });
 
 
     </script>
 </body>
 </html>
+
+
+
+
 
